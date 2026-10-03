@@ -1,128 +1,213 @@
-# A Gala to Remember
+# Gala Agent Project
 
-This repository is the foundation for an agentic Retrieval-Augmented Generation (RAG) project built around a fictional but realistic gala-planning scenario.
+This project is a small but complete Retrieval-Augmented Generation (RAG) agent built around a fictional luxury gala scenario. The goal is to create an assistant named Alfred that answers guest-related questions using an event dataset instead of relying only on generic model memory.
 
-The goal is to create an assistant named Alfred that can plan, support, and answer questions during an extravagant event. Alfred must be able to retrieve up-to-date information about guests, weather, and event logistics, while also making useful recommendations and handling unexpected situations.
+The current implementation is intentionally simple and modular: it loads a guest dataset, retrieves the most relevant record, builds a prompt, and sends it to a local Ollama model for a constrained answer.
 
-## How this project was done
+## How this project was built
 
-### 1. Define the use case
+### 1. Use case definition
 
-The project starts from a concrete business scenario:
+The project started from a clear business problem:
 
-- A host wants to organize a world-class gala
-- The assistant must support planning, guest relations, and live event operations
-- The assistant cannot rely only on general model knowledge, because event details are unique and time-sensitive
+- a gala host needs a polished assistant
+- guest information must be accurate and specific
+- the model should answer only the requested person or topic
+- the agent must not invent information or expand beyond the dataset
 
-This is why the project is built around an agentic RAG approach instead of a simple question-answer bot.
+This is why the solution is not a generic chatbot, but a focused agentic RAG workflow.
 
-### 2. Use an agentic approach
+### 2. Data source and retrieval layer
 
-Instead of blindly answering from a single static prompt, Alfred is treated as an agent that can decide when to:
+The main dataset lives in:
 
-- Search party information
-- Retrieve guest-specific data
-- Check live or external weather context
-- Answer questions based on the most relevant facts
-- Use tools when needed
+- [data/gala-invitees.parquet](data/gala-invitees.parquet)
 
-This matches the idea that an agent should not be limited to a single document pipeline. It should be able to choose the best available tool or workflow for each request.
+The retrieval logic is implemented in:
 
-### 3. Build a custom retrieval layer
+- [src/retriever.py](src/retriever.py)
 
-The guest dataset is the project’s information foundation. Each guest record contains:
+That file does the following:
 
-- Name
-- Relation to host
-- Description / biography
-- Email address
+- reads the parquet file with pandas
+- converts each guest into a LangChain Document
+- creates a BM25 retriever
+- prefers exact-name matches first
+- falls back to ranked retrieval when necessary
+- returns only the best record for the query
 
-A retrieval component is needed so Alfred can search this dataset efficiently and provide highly relevant information, rather than guessing from model memory.
+This is the key step that keeps the agent grounded in known guest data.
 
-### 4. Use RAG for domain-specific knowledge
+### 3. Prompt design and behavior control
 
-Large language models are trained on broad information, but they do not automatically know the details of your own event or the exact relationships between invitees. RAG solves this by:
+The instructions sent to the model are defined in:
 
-- Storing structured event data
-- Retrieving relevant records for a query
-- Passing those records into the language model as context
-- Letting the model produce answers grounded in the retrieved information
+- [src/prompts.py](src/prompts.py)
 
-This is especially important for guest stories, contact information, and personalized event recommendations.
+The system prompt explicitly tells the model to:
 
-### 5. Separate responsibilities into modules
+- answer only the guest the user asked about
+- avoid mentioning other guests unless explicitly requested
+- avoid extra anecdotes or side facts
+- never invent details
+- remain professional and elegant in tone
 
-The project is organized so that different concerns live in different files:
+This was important because without strict instructions, the model tends to expand beyond the original question.
 
-- `tools.py`: auxiliary tools used by the agent
-- `retriever.py`: retrieval logic and dataset access
-- `app.py`: orchestration for the full agent workflow
+### 4. Agent orchestration
 
-This keeps the design modular and easy to extend later.
+The main runtime entry point is:
 
-## Project goal
+- [src/app.py](src/app.py)
 
-The final application is intended to support Alfred in several ways:
+This file:
 
-- Planning and preparing the gala
-- Answering guest-related questions
-- Recalling notable details about attendees
-- Using retrieval for personalized information
-- Monitoring event needs in real time
-- Supporting smooth event execution with relevant knowledge
+- loads environment variables
+- initializes the local Ollama model
+- binds the guest retrieval tool to the model
+- builds an agent state using LangGraph
+- invokes the tool and the model together
+- prints the final answer for a sample question
 
-## Core concept
+The model used in the current setup is a local Ollama model:
 
-The central idea is simple:
+- qwen2.5
 
-A great host does not just throw a party. A great host understands the people attending, the timing of the event, and the practical details required for a smooth experience. Alfred acts as that intelligent event assistant.
+This avoids external paid API dependency and keeps the project simple to run locally.
 
-## Expected future development
+### 5. Tool structure
 
-This initial version is only the foundation. The next steps will be to:
+The current project keeps tool logic intentionally minimal and modular in:
 
-- create the retrieval logic
-- add tool functions for queries, guests, and weather
-- connect the components inside the main app
-- refine the agent’s behavior for real-time event support
+- [src/tools.py](src/tools.py)
 
-## Professional project foundation
+Right now it exists as a placeholder for future event-related helper tools, while the active guest lookup logic is handled directly by the retriever layer.
 
-The repository has a clean project structure that is intentionally simple and easy to work with.
+## Actual project structure
 
-### Core structure
+This is the real structure of the repository today:
 
-- `src/gala_agent/` — main Python package for the application
-- `src/gala_agent/core/` — configuration and service settings
-- `src/gala_agent/retrieval/` — retrieval logic for guest and event knowledge
-- `src/gala_agent/tools/` — custom tool functions for Alfred
-- `data/` — datasets and event knowledge assets
-- `tests/` — validation and regression tests
-- `docs/` — architecture and project documentation
-- `scripts/` — optional local automation
+```text
+RAG UseCase/
+├── .env
+├── .gitignore
+├── .venv/
+├── config/
+│   ├── requirements.txt
+│   └── setup_env.ps1
+├── data/
+│   └── gala-invitees.parquet
+├── pyproject.toml
+├── PROJECT_OVERVIEW.md
+├── README.md
+└── src/
+    ├── app.py
+    ├── prompts.py
+    ├── retriever.py
+    └── tools.py
+```
 
-### Quick environment setup
+## What each file does
 
-The project is designed to run in a lightweight local virtual environment, without Docker or extra build complexity.
+### Root files
 
-This version uses a local Ollama model instead of a paid external API, so the setup is transparent and does not require a secret key in the repository.
+- [pyproject.toml](pyproject.toml)  
+  Project metadata and packaging information for Python. It is lightweight and not the main dependency source for runtime setup.
 
-1. Create the environment:
-   `python -m venv .venv`
-2. Activate it:
-   `.venv\Scripts\Activate.ps1`
-3. Install the dependencies:
-   `python -m pip install --upgrade pip`
-   `python -m pip install -r requirements.txt`
-4. Install the local LLM model:
-   `ollama pull qwen2.5`
-5. Run the app:
-   `python app.py`
+- [PROJECT_OVERVIEW.md](PROJECT_OVERVIEW.md)  
+  Conceptual project description of the gala scenario and the purpose of the agent.
 
-A PowerShell helper script is also included at [setup_env.ps1](setup_env.ps1) to automate this setup.
+- [.gitignore](.gitignore)  
+  Ignores local environment files such as .env.
 
-This keeps the environment professional, stable, and easy to manage without unnecessary tooling or paid API dependencies.
+- [.env](.env)  
+  Local environment variables for the developer machine. It is not meant to be committed.
+
+### Configuration folder
+
+- [config/requirements.txt](config/requirements.txt)  
+  Dependency list used to set up the project environment.
+
+- [config/setup_env.ps1](config/setup_env.ps1)  
+  PowerShell helper that creates the venv, installs dependencies, and pulls the local Ollama model.
+
+### Source folder
+
+- [src/app.py](src/app.py)  
+  Application entry point and LangGraph orchestration.
+
+- [src/retriever.py](src/retriever.py)  
+  Guest dataset loading and retrieval logic.
+
+- [src/prompts.py](src/prompts.py)  
+  System prompt for the assistant.
+
+- [src/tools.py](src/tools.py)  
+  Future place for the agent’s helper tools.
+
+## Environment setup
+
+The project uses a local Python virtual environment and a local Ollama model.
+
+### 1. Create the virtual environment
+
+```powershell
+python -m venv .venv
+```
+
+### 2. Activate it
+
+```powershell
+.\.venv\Scripts\Activate.ps1
+```
+
+If PowerShell blocks the activation, use:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\config\setup_env.ps1
+```
+
+### 3. Install dependencies
+
+```powershell
+python -m pip install -r .\config\requirements.txt
+```
+
+### 4. Pull the local model
+
+```powershell
+ollama pull qwen2.5
+```
+
+### 5. Run the app
+
+```powershell
+python .\src\app.py
+```
+
+## Current implementation status
+
+This version is a working foundation for:
+
+- guest retrieval from a parquet dataset
+- exact-match and BM25 ranking
+- a strict prompt for a gala assistant
+- local LLM execution through Ollama
+- agent orchestration with LangGraph
+
+The project is intentionally compact and professional, without adding unnecessary infrastructure like Docker or a complex monorepo setup.
+
+## Why this structure works
+
+The design is simple because each concern has a clear place:
+
+- data is stored separately in [data](data)
+- runtime dependencies live in [config](config)
+- Python logic lives in [src](src)
+- the project concept lives in [PROJECT_OVERVIEW.md](PROJECT_OVERVIEW.md)
+
+This keeps the repository easy to understand, easy to extend, and easy to run locally.
 
 ---
 
-This README records the implementation approach used for the project. The project description and agent purpose are documented in the companion file [docs/PROJECT_OVERVIEW.md](docs/PROJECT_OVERVIEW.md).
+This README reflects the actual state of the repository as it exists now. The higher-level project concept remains in [PROJECT_OVERVIEW.md](PROJECT_OVERVIEW.md).
