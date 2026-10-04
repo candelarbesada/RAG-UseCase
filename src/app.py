@@ -13,9 +13,9 @@ from langgraph.graph import START, StateGraph
 from langgraph.graph.message import add_messages
 from langgraph.prebuilt import ToolNode, tools_condition
 
-from prompts import build_prompt
-from retriever import guest_info_tool
-from tools import get_weather, search_tool, visit_webpage_tool
+from agent.prompts import build_prompt
+from agent.retriever import guest_info_tool
+from agent.tools import get_weather, search_tool, visit_webpage_tool
 
 # Generate the chat interface, including the tools
 llm = ChatOllama(model="qwen2.5", temperature=0)

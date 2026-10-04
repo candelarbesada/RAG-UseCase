@@ -6,7 +6,7 @@ from langchain_community.retrievers import BM25Retriever
 import pandas as pd
 
 
-DATA_PATH = Path(__file__).resolve().parent.parent / "data" / "gala-invitees.parquet"
+DATA_PATH = Path(__file__).resolve().parents[2] / "data" / "gala-invitees.parquet"
 
 # Load the dataset
 guest_dataset = pd.read_parquet(DATA_PATH)
