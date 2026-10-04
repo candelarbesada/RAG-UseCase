@@ -1,11 +1,15 @@
+from pathlib import Path
+
 from langchain_core.documents import Document
 from langchain_core.tools import Tool
 from langchain_community.retrievers import BM25Retriever
 import pandas as pd
 
 
+DATA_PATH = Path(__file__).resolve().parent.parent / "data" / "gala-invitees.parquet"
+
 # Load the dataset
-guest_dataset = pd.read_parquet("data/gala-invitees.parquet")
+guest_dataset = pd.read_parquet(DATA_PATH)
 
 # Convert dataset entries into Document objects
 docs = [
