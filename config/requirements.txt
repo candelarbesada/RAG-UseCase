@@ -10,5 +10,6 @@ langchain-community>=0.0.1
 langchain-ollama>=0.0.1
 rank_bm25>=0.2.2
 duckduckgo_search>=0.1.0
-markdownify>=3.4.0
+markdownify>=1.0.0
 ddgs>=0.3.0
+streamlit>=1.39.0
