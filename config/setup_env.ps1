@@ -7,6 +7,10 @@ if (-not (Get-Command python -ErrorAction SilentlyContinue)) {
     throw "Python is not installed or not available on PATH. Install Python 3.10+ and try again."
 }
 
+if (-not (Get-Command ollama -ErrorAction SilentlyContinue)) {
+    throw "Ollama is not installed or not available on PATH. Install it from https://ollama.com/download and run this setup script again."
+}
+
 if (-not (Test-Path ".venv")) {
     Write-Host "Creating virtual environment..."
     python -m venv .venv
@@ -19,7 +23,7 @@ Write-Host "Upgrading pip..."
 python -m pip install --upgrade pip
 
 Write-Host "Installing project dependencies..."
-python -m pip install -r .\config\requirements.txt
+python -m pip install -e ".[dev]"
 
 Write-Host "Installing Ollama model..."
 ollama pull qwen2.5
