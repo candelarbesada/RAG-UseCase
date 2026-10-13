@@ -92,7 +92,8 @@ RAG UseCase/
 │   ├── test_retriever.py
 │   └── test_tools.py
 ├── docs/
-│   └── PROJECT_OVERVIEW.md
+│   ├── PROJECT_OVERVIEW.md
+│   └── PROJECT_SPECIFICATIONS.docx
 ├── README.md
 └── pyproject.toml
 ```
@@ -105,7 +106,7 @@ RAG UseCase/
 - [src/agent/prompts.py](src/agent/prompts.py) defines the assistant's response instructions.
 - [src/agent/tools.py](src/agent/tools.py) provides weather, web search, and webpage-reading tools.
 
-The project setup helper is [config/setup_env.ps1](config/setup_env.ps1). For a concise description of the current release, see [docs/PROJECT_OVERVIEW.md](docs/PROJECT_OVERVIEW.md).
+The project setup helper is [config/setup_env.ps1](config/setup_env.ps1). For a concise description of the current release, see [docs/PROJECT_OVERVIEW.md](docs/PROJECT_OVERVIEW.md). The detailed English product, technical, and release specifications are in [docs/PROJECT_SPECIFICATIONS.docx](docs/PROJECT_SPECIFICATIONS.docx).
 
 ## Dataset attribution
 
