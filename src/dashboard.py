@@ -8,7 +8,12 @@ SRC_DIR = Path(__file__).resolve().parent
 if str(SRC_DIR) not in sys.path:
     sys.path.insert(0, str(SRC_DIR))
 
-from app import alfred
+from app import (
+    OllamaUnavailableError,
+    alfred,
+    clear_conversation,
+    new_conversation_id,
+)
 
 st.set_page_config(
     page_title="Wayne Manor — Alfred",
@@ -160,6 +165,8 @@ if "last_context" not in st.session_state:
     st.session_state.last_context = "Awaiting instructions."
 if "pending_prompt" not in st.session_state:
     st.session_state.pending_prompt = None
+if "conversation_id" not in st.session_state:
+    st.session_state.conversation_id = new_conversation_id()
 
 st.markdown('<div class="main-title">Wayne Manor</div>', unsafe_allow_html=True)
 st.markdown('<div class="subtitle">Intelligence desk • Alfred, your butler</div>', unsafe_allow_html=True)
@@ -181,10 +188,17 @@ with st.sidebar:
     st.markdown("---")
 
     if st.button("Clear the desk"):
+        clear_conversation(st.session_state.conversation_id)
+        st.session_state.conversation_id = new_conversation_id()
         st.session_state.messages = []
         st.session_state.trace = []
         st.session_state.last_context = "Awaiting instructions."
         st.session_state.pending_prompt = None
+
+    st.caption(
+        "Alfred keeps up to six previous messages in this conversation. "
+        "Memory is cleared with the desk or when the app restarts."
+    )
 
     st.markdown("---")
     st.caption("Service status")
@@ -232,33 +246,33 @@ with metric_cols[3]:
         unsafe_allow_html=True,
     )
 
-chat_container = st.container()
-
-if st.session_state.pending_prompt:
-    user_input = st.session_state.pending_prompt
-    st.session_state.pending_prompt = None
-else:
-    user_input = st.chat_input("Ask Alfred for the latest update...")
+typed_input = st.chat_input("Ask Alfred for the latest update...")
+user_input = st.session_state.pending_prompt or typed_input
+st.session_state.pending_prompt = None
 
 if user_input:
     st.session_state.messages.append({"role": "user", "content": user_input})
 
-    with st.spinner("The butler is preparing the answer..."):
-        response = alfred.invoke({"messages": [HumanMessage(content=user_input)]})
+    try:
+        with st.spinner("The butler is preparing the answer..."):
+            response = alfred.invoke(
+                {"messages": [HumanMessage(content=user_input)]},
+                config={"configurable": {"thread_id": st.session_state.conversation_id}},
+            )
+    except OllamaUnavailableError as error:
+        st.error(str(error))
+    else:
         answer = response["messages"][-1].content
         st.session_state.messages.append({"role": "assistant", "content": answer})
 
-    try:
         guest_name = response.get("active_guest")
         st.session_state.last_context = guest_name or "No active guest"
-    except Exception:
-        st.session_state.last_context = "No active guest"
 
-    st.session_state.trace.append({
-        "prompt": user_input,
-        "response": answer,
-        "context": st.session_state.last_context,
-    })
+        st.session_state.trace.append({
+            "prompt": user_input,
+            "response": answer,
+            "context": st.session_state.last_context,
+        })
 
 for message in st.session_state.messages:
     with st.chat_message(message["role"]):

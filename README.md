@@ -7,10 +7,13 @@ This project provides a Streamlit dashboard for Alfred, an assistant that answer
 The dashboard is implemented in [src/dashboard.py](src/dashboard.py). It provides:
 
 - A chat interface with suggested prompts and a conversation history.
+- Suggested prompts and the manual chat input remain available together.
+- Per-conversation agent memory while the dashboard process is running; starting a new session or clearing the desk starts fresh.
+- Guest `Relation` values describe the guest's relationship to the dashboard user, Bruce Wayne.
 - A guest context summary and an operational trace of questions and answers.
 - Access to the guest dataset, web search, webpage reading, and weather information through the assistant.
 
-The agent orchestration and local Ollama model are defined in [src/app.py](src/app.py). You normally do not launch that file directly: Streamlit loads it when the dashboard starts.
+The agent orchestration, in-memory conversation checkpointing, and local Ollama model are defined in [src/app.py](src/app.py). The agent keeps up to six previous user/assistant messages (up to 1,000 characters each) as bounded context, recognizes the dashboard user as Bruce Wayne, and answers guest-relation questions directly from each matching record's `Relation` field. User-provided details are kept separate from retrieved guest records; conversation memory is isolated by Streamlit session and is not persisted after the app process ends. You normally do not launch that file directly: Streamlit loads it when the dashboard starts.
 
 ## Requirements
 
@@ -64,6 +67,8 @@ ollama serve
 
 The setup script also runs `ollama pull qwen2.5`.
 
+If Alfred reports that it cannot connect to Ollama, start or restart the Ollama service and retry. If the model is missing, run `ollama pull qwen2.5`. The dashboard shows this actionable message instead of a connection traceback.
+
 ### 4. Launch the dashboard
 
 ```powershell
@@ -101,7 +106,7 @@ RAG UseCase/
 ## How it works
 
 - [src/dashboard.py](src/dashboard.py) renders the Streamlit interface and passes chat messages to Alfred.
-- [src/app.py](src/app.py) builds the LangGraph workflow and connects it to the local `qwen2.5` model through Ollama.
+- [src/app.py](src/app.py) builds the LangGraph workflow, maintains per-conversation in-memory checkpoints, and connects to the local `qwen2.5` model through Ollama.
 - [src/agent/retriever.py](src/agent/retriever.py) loads the parquet guest data and retrieves relevant guest information.
 - [src/agent/prompts.py](src/agent/prompts.py) defines the assistant's response instructions.
 - [src/agent/tools.py](src/agent/tools.py) provides weather, web search, and webpage-reading tools.

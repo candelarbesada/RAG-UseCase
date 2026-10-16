@@ -38,3 +38,13 @@ def test_extract_text_uses_bm25_fallback(monkeypatch):
 
 def test_extract_text_rejects_empty_query():
     assert retriever.extract_text("  ") == "No matching guest information found."
+
+
+def test_find_guest_name_matches_name_in_a_question(monkeypatch):
+    monkeypatch.setattr(
+        retriever,
+        "docs",
+        [make_document("Marie Curie"), make_document("Ada Lovelace")],
+    )
+
+    assert retriever.find_guest_name("How is Marie Curie related to me?") == "Marie Curie"
