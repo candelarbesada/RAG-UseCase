@@ -1,3 +1,4 @@
+import re
 from pathlib import Path
 
 from langchain_core.documents import Document
@@ -30,6 +31,15 @@ bm25_retriever = BM25Retriever.from_documents(docs)
 
 def _normalize(text: str) -> str:
     return text.lower().strip().replace("'", "").replace('"', "")
+
+
+def find_guest_name(query: str) -> str | None:
+    """Return a dataset guest name explicitly mentioned in a query."""
+    for doc in docs:
+        name = str(doc.metadata.get("name", "")).strip()
+        if name and re.search(rf"(?<!\w){re.escape(name)}(?!\w)", query, re.IGNORECASE):
+            return name
+    return None
 
 
 def extract_text(query: str) -> str:
